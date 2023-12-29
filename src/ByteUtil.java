@@ -1,11 +1,13 @@
-public class ByteUtil {
-    static long nByteToLong(byte[] byteArr)throws ArrayIndexOutOfBoundsException {
+import java.nio.charset.StandardCharsets;
 
-        if (byteArr.length > 8){
+public class ByteUtil {
+    static long nByteToLong(byte[] byte_arr)throws ArrayIndexOutOfBoundsException {
+
+        if (byte_arr.length > 8){
             throw new ArrayIndexOutOfBoundsException("Array size must be lower than 8byte.");
         }
         long res = 0;
-        for (byte b : byteArr){
+        for (byte b : byte_arr){
             res = res << 8 | ByteUtil.makeZeroByte(b);
         }
         return res;
@@ -29,9 +31,16 @@ public class ByteUtil {
         return Integer.toString(((int) b & 0xff)+0x100, 16).substring(1).toUpperCase();
     }
 
-    static void printByteArr(byte[] byteArr){
-        for (byte b : byteArr){
+    static void printByteArr(byte[] byte_arr){
+        for (byte b : byte_arr){
             System.out.printf("%s ", ByteUtil.hexString(b));
         }
+    }
+
+    static String makeStringFromByteArray(byte[] byte_arr, int start_index, int size){
+        byte[] tmp = new byte[size];
+        System.arraycopy(byte_arr, start_index, tmp, 0, size);
+        String res = new String(tmp, StandardCharsets.UTF_8);
+        return res;
     }
 }
