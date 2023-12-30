@@ -2,11 +2,6 @@ import java.util.Vector;
 
 public class TrackChunk extends Chunk{
     Vector<EventData> event_vec = new Vector<>();
-    String track_name = "", copyright = "Unknown", instrument_name, key, scale, lyrics, user_message;
-    int tempo, channel, port, numerator, denominator, metronome_ticks, event_state;
-
-    final String[] KEY_ARR = {"Cb","Gb", "Db","Ab","Eb","Bb","Fb","C","G","D","A","E","B","F#","C#"};
-    final String[] KEY_ARR2 = {"Ab","Eb", "Bb","Fb","Cb","Gb","Db","A", "E","B","F#","C#","G#","D#","A#"};
 
     TrackChunk(byte[] type, byte[] length, byte[] data){
         super(type, length,data);
@@ -25,7 +20,6 @@ public class TrackChunk extends Chunk{
             }
             else{
                 if (Byte.toUnsignedInt(data[k]) <= Byte.toUnsignedInt((byte)0xEF)) {
-                    event_state = 0;
                     if (Byte.toUnsignedInt(data[k]) >= Byte.toUnsignedInt((byte)0x80) &&
                             Byte.toUnsignedInt(data[k]) <= Byte.toUnsignedInt((byte)0xBF) ||
                             Byte.toUnsignedInt(data[k]) >= Byte.toUnsignedInt((byte)0xE0) &&
@@ -45,78 +39,29 @@ public class TrackChunk extends Chunk{
                         tmp_arr = new byte[prev_midi_data_arr.length];
                         tmp_arr[0] = prev_midi_data_arr[0];
                         System.arraycopy(data, k, tmp_arr, 1, tmp_arr.length - 1);
-                        EventData ed = new EventData(dt_arr, tmp_arr, event_state);
-                        event_vec.add(ed);
+                        MidiEvent me = new MidiEvent(dt_arr, tmp_arr, true);
+                        event_vec.add(me);
                         k += tmp_arr.length - 2;
                         is_delta_time = true;
                         continue;
                     }
+                    MidiEvent me = new MidiEvent(dt_arr, tmp_arr, false);
+                    event_vec.add(me);
                 }
                 else if (Byte.toUnsignedInt(data[k]) >= Byte.toUnsignedInt((byte)0xF0) &&
                         Byte.toUnsignedInt(data[k]) <= Byte.toUnsignedInt((byte)0xFE)) {
-                    event_state = 1;
                     dt_length = 0;
                     is_delta_time = true;
                     continue;
                 }
                 else {
-                    event_state = 2;
                     tmp_arr = new byte[Byte.toUnsignedInt(data[k + 2]) + 3];
                     System.arraycopy(data, k, tmp_arr, 0, tmp_arr.length);
+                    Metadata md = new Metadata(dt_arr, tmp_arr);
+                    event_vec.add(md);
                 }
-                EventData ed = new EventData(dt_arr, tmp_arr, event_state);
-                event_vec.add(ed);
                 k += tmp_arr.length - 1;
                 is_delta_time = true;
-            }
-        }
-
-        for (EventData ed : event_vec){
-            if (ed.event_state != 2) continue;
-            byte meta_message = ed.data_byte_arr[1];
-            switch (meta_message){
-                case (byte)0x01:
-                    user_message = ByteUtil.makeStringFromByteArray(ed.data_byte_arr, 3, Byte.toUnsignedInt(ed.data_byte_arr[2]));
-                    break;
-                case (byte)0x02:
-                    copyright = ByteUtil.makeStringFromByteArray(ed.data_byte_arr, 3, Byte.toUnsignedInt(ed.data_byte_arr[2]));
-                    break;
-                case (byte)0x03:
-                    track_name = ByteUtil.makeStringFromByteArray(ed.data_byte_arr, 3, Byte.toUnsignedInt(ed.data_byte_arr[2]));
-                    break;
-                case (byte)0x04:
-                    instrument_name = ByteUtil.makeStringFromByteArray(ed.data_byte_arr, 3, Byte.toUnsignedInt(ed.data_byte_arr[2]));
-                    break;
-                case (byte)0x05:
-                    lyrics = ByteUtil.makeStringFromByteArray(ed.data_byte_arr, 3, Byte.toUnsignedInt(ed.data_byte_arr[2]));
-                    break;
-                case (byte)0x20:
-                    channel = Byte.toUnsignedInt(ed.data_byte_arr[3]);
-                    break;
-                case (byte)0x21:
-                    port = Byte.toUnsignedInt(ed.data_byte_arr[3]);
-                    break;
-                case (byte)0x51:
-                    tempo = (int)ByteUtil.nByteToLong(new byte[]{ed.data_byte_arr[3], ed.data_byte_arr[4], ed.data_byte_arr[5]});
-                    break;
-                case (byte)0x58:
-                    numerator = ed.data_byte_arr[3];
-                    denominator = (int) Math.pow(2,ed.data_byte_arr[4]);
-                    metronome_ticks = ed.data_byte_arr[5];
-                    break;
-                case (byte)0x59:
-                    int sf = Byte.toUnsignedInt(ed.data_byte_arr[3]);
-                    if (ed.data_byte_arr[4] == 0){
-                        key = KEY_ARR[sf];
-                        scale = "major";
-                    }
-                    else {
-                        key = KEY_ARR2[sf];
-                        scale = "minor";
-                    }
-                    break;
-                default:
-                    break;
             }
         }
     }
@@ -124,14 +69,16 @@ public class TrackChunk extends Chunk{
     @Override
     void printDataInHex(){
         System.out.println("==================================================");
-        super.printDataInHex();
-        System.out.println("Analyze- - - - - - - - - - - - - - - - - - - - - -");
         System.out.println("Chunk Type : Mtrk");
-        System.out.printf("Copyrights : %s\t| Key : %s\t| Scale : %s\t| Tempo : %d/%d\t| Ticks : %d\t| During Tempo : %d%n", copyright, key, scale, numerator, denominator, metronome_ticks, tempo);
-        System.out.printf("User Message : %s\t| MIDI Port : %d\t| Channel Prefix : %d\t| Track Name : %s\t| Instrument Name : %s%n", user_message, port, channel, track_name, instrument_name);
-        System.out.printf("Lyrics : %s%n%n", lyrics);
         for (EventData ed : event_vec){
             ed.print();
+//            System.out.print("\t\t\t\tdelT hex\t\t\t: ");
+//            ByteUtil.printByteArr(ed.getDeltaTimeArr());
+//            System.out.println();
+//            System.out.print("\t\t\t\tdata hex\t\t\t: ");
+//            ByteUtil.printByteArr(ed.getDataArr());
+//            System.out.println();
+//            ed.printStateInHex();
         }
     }
 }

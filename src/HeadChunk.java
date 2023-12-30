@@ -15,9 +15,7 @@ public class HeadChunk extends Chunk{
     @Override
     void printDataInHex(){
         System.out.println("==================================================");
-        super.printDataInHex();
-        System.out.println("Analyze- - - - - - - - - - - - - - - - - - - - - -");
-        System.out.println("Chunk Type : Mthd");
+        System.out.println("Chunk Type : Head Chunk");
         System.out.printf("Chunk Format : %d%n", format);
         System.out.printf("Chunk Track count : %d%n", track_count);
         System.out.printf("Chunk Division : %d%n", division);

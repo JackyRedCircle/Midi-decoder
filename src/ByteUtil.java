@@ -8,15 +8,9 @@ public class ByteUtil {
         }
         long res = 0;
         for (byte b : byte_arr){
-            res = res << 8 | ByteUtil.makeZeroByte(b);
+            res = res << 8 | (b & (long)255);
         }
         return res;
-    }
-
-    static long makeZeroByte(byte b){
-        long b_long = b;
-        b_long = b_long << 56 >>> 56;
-        return b_long;
     }
 
     static String toBinaryString(long i){

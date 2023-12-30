@@ -1,4 +1,4 @@
-public class Chunk {
+abstract public class Chunk {
     byte[] type, length, data;
     int data_length;
 
@@ -7,14 +7,6 @@ public class Chunk {
         this.data_length = data.length;
     }
 
-    void printDataInHex(){
-        System.out.print("Chunk Type : ");
-        ByteUtil.printByteArr(type);
-        System.out.printf("%nChunk Length[ %d bytes ] : ", data_length);
-        ByteUtil.printByteArr(length);
-        System.out.printf("%nChunk Data : ");
-        ByteUtil.printByteArr(data);
-        System.out.println();
-    }
+    abstract void printDataInHex();
 
 }
